@@ -1,1 +1,504 @@
 
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>DARTS PRACTICE</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+body {
+  background: #080808;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+
+.app {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+}
+
+.title {
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+}
+
+.mode {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.mode button {
+  width: 105px;
+  height: 38px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background: #171717;
+  color: #888;
+  font-size: 15px;
+  font-weight: bold;
+  touch-action: manipulation;
+}
+
+.mode button.active {
+  color: #fff;
+  border-color: #fff;
+  background: #252525;
+}
+
+.goal-area {
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.goal-label {
+  color: #777;
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+
+.goal {
+  display: inline-block;
+  padding: 2px 10px;
+  min-width: 55px;
+  border-radius: 6px;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.goal:active {
+  background: #222;
+}
+
+.goal-input {
+  width: 80px;
+  height: 34px;
+  border: 1px solid #777;
+  border-radius: 6px;
+  background: #151515;
+  color: #fff;
+  text-align: center;
+  font-size: 22px;
+  font-weight: bold;
+  outline: none;
+}
+
+.board {
+  flex: 1;
+  min-height: 0;
+
+  display: grid;
+  grid-template-columns: 76px 1fr 76px;
+  gap: 10px;
+
+  align-items: center;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.score-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.score {
+  font-size: clamp(60px, 18vw, 95px);
+  font-weight: bold;
+  line-height: 1;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.button {
+  width: 100%;
+  height: 48px;
+  border-radius: 10px;
+  background: #151515;
+  font-size: 20px;
+  font-weight: bold;
+  touch-action: manipulation;
+}
+
+.button:active {
+  transform: scale(.95);
+}
+
+.minus {
+  border: 1px solid #733;
+  color: #ff7777;
+}
+
+.plus {
+  border: 1px solid #285b91;
+  color: #70b9ff;
+}
+
+.reset {
+  display: block;
+  width: 180px;
+  height: 42px;
+  margin: 6px auto 0;
+
+  border: 1px solid #444;
+  border-radius: 9px;
+
+  background: #111;
+  color: #aaa;
+
+  font-size: 15px;
+  font-weight: bold;
+  touch-action: manipulation;
+}
+
+/* CRICKET */
+.plus-column.cricket {
+  align-self: center;
+  justify-content: center;
+}
+
+.plus-column.cricket .button {
+  height: 38px;
+  font-size: 17px;
+}
+
+/* 小さい画面 */
+@media (max-height: 700px) {
+
+  .app {
+    padding-top: 8px;
+  }
+
+  .title {
+    margin-bottom: 4px;
+  }
+
+  .mode button {
+    height: 34px;
+  }
+
+  .column {
+    gap: 4px;
+  }
+
+  .button {
+    height: 42px;
+  }
+
+  .plus-column.cricket .button {
+    height: 34px;
+  }
+
+  .reset {
+    height: 36px;
+    margin-top: 4px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <div class="title">DARTS PRACTICE</div>
+
+  <div class="mode">
+    <button id="bullButton" class="active">BULL</button>
+    <button id="cricketButton">CRICKET</button>
+  </div>
+
+  <div class="goal-area">
+    <div class="goal-label">GOAL</div>
+    <span id="goal" class="goal">50</span>
+  </div>
+
+  <div class="board">
+
+    <!-- 左：マイナス -->
+    <div class="column">
+      <button class="button minus" data-value="-1">−1</button>
+      <button class="button minus" data-value="-2">−2</button>
+      <button class="button minus" data-value="-3">−3</button>
+    </div>
+
+    <!-- 中央：スコア -->
+    <div class="score-area">
+      <div id="score" class="score">0</div>
+    </div>
+
+    <!-- 右：プラス -->
+    <div id="plusColumn" class="column"></div>
+
+  </div>
+
+  <button id="reset" class="reset">RESET</button>
+
+</div>
+
+<script>
+let score = 0;
+let goalValue = 50;
+let currentMode = "BULL";
+
+const scoreElement = document.getElementById("score");
+const goalElement = document.getElementById("goal");
+const plusColumn = document.getElementById("plusColumn");
+
+const bullButton = document.getElementById("bullButton");
+const cricketButton = document.getElementById("cricketButton");
+
+const resetButton = document.getElementById("reset");
+
+
+/* スコア表示 */
+function updateScore() {
+  scoreElement.textContent = score;
+}
+
+
+/* プラスボタン生成 */
+function createPlusButtons() {
+
+  plusColumn.innerHTML = "";
+
+  const max =
+    currentMode === "BULL"
+      ? 6
+      : 9;
+
+  if (currentMode === "CRICKET") {
+    plusColumn.classList.add("cricket");
+  } else {
+    plusColumn.classList.remove("cricket");
+  }
+
+  for (let i = 1; i <= max; i++) {
+
+    const button = document.createElement("button");
+
+    button.className = "button plus";
+    button.textContent = "＋" + i;
+
+    button.addEventListener("click", function () {
+      score += i;
+      updateScore();
+    });
+
+    plusColumn.appendChild(button);
+  }
+}
+
+
+/* マイナスボタン */
+document.querySelectorAll(".minus").forEach(function(button) {
+
+  button.addEventListener("click", function() {
+
+    score += Number(button.dataset.value);
+
+    updateScore();
+
+  });
+
+});
+
+
+/* BULL */
+bullButton.addEventListener("click", function() {
+
+  currentMode = "BULL";
+
+  bullButton.classList.add("active");
+  cricketButton.classList.remove("active");
+
+  createPlusButtons();
+
+});
+
+
+/* CRICKET */
+cricketButton.addEventListener("click", function() {
+
+  currentMode = "CRICKET";
+
+  cricketButton.classList.add("active");
+  bullButton.classList.remove("active");
+
+  createPlusButtons();
+
+});
+
+
+/* RESET */
+resetButton.addEventListener("click", function() {
+
+  score = 0;
+
+  updateScore();
+
+});
+
+
+/* GOALを直接タップして変更 */
+goalElement.addEventListener("click", function() {
+
+  const input = document.createElement("input");
+
+  input.type = "number";
+  input.inputMode = "numeric";
+  input.className = "goal-input";
+
+  input.value = goalValue;
+  input.min = 1;
+
+  goalElement.replaceWith(input);
+
+  input.focus();
+  input.select();
+
+
+  function saveGoal() {
+
+    let value = parseInt(input.value, 10);
+
+    if (!Number.isFinite(value) || value < 1) {
+      value = goalValue;
+    }
+
+    goalValue = value;
+
+    const newGoal = document.createElement("span");
+
+    newGoal.id = "goal";
+    newGoal.className = "goal";
+    newGoal.textContent = goalValue;
+
+    input.replaceWith(newGoal);
+
+    newGoal.addEventListener("click", editGoal);
+
+  }
+
+
+  input.addEventListener("keydown", function(event) {
+
+    if (event.key === "Enter") {
+
+      event.preventDefault();
+
+      saveGoal();
+
+    }
+
+  });
+
+
+  input.addEventListener("blur", saveGoal);
+
+});
+
+
+/* GOAL編集 */
+function editGoal() {
+
+  const oldGoal = document.getElementById("goal");
+
+  const input = document.createElement("input");
+
+  input.type = "number";
+  input.inputMode = "numeric";
+  input.className = "goal-input";
+
+  input.value = goalValue;
+  input.min = 1;
+
+  oldGoal.replaceWith(input);
+
+  input.focus();
+  input.select();
+
+
+  let saved = false;
+
+
+  function save() {
+
+    if (saved) return;
+
+    saved = true;
+
+    let value = parseInt(input.value, 10);
+
+    if (!Number.isFinite(value) || value < 1) {
+      value = goalValue;
+    }
+
+    goalValue = value;
+
+    const newGoal = document.createElement("span");
+
+    newGoal.id = "goal";
+    newGoal.className = "goal";
+    newGoal.textContent = goalValue;
+
+    input.replaceWith(newGoal);
+
+    newGoal.addEventListener("click", editGoal);
+
+  }
+
+
+  input.addEventListener("keydown", function(event) {
+
+    if (event.key === "Enter") {
+
+      event.preventDefault();
+
+      save();
+
+    }
+
+  });
+
+
+  input.addEventListener("blur", save);
+
+}
+
+
+/* 初期表示 */
+createPlusButtons();
+updateScore();
+
+</script>
+
+</body>
+</html>
